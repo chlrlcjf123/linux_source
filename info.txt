@@ -1,0 +1,80 @@
+kill -l #signal list 출력
+
+ulimit -c unlimited #core dump 생성을 위한 준비 작업
+
+ctrl+\ #quit 시그널 전송(프로그램 종료)
+
+struct sigaction
+{
+	void (*sa_handler)(int);
+	void (*sa_sigaction)(int, siginfo_t *, void *);
+	sigset_t sa_mask;
+	int sa_flags;
+	void (*sa_restorer)(void);
+}
+
+sa_handlersa_handler
+: signum번호를 가지는 시그널이 발생했을 때 실행된 함수를 설치한다. 함수외에도 SIG_DFL과 SIG_IGN을 지정할 수 있다. 전자는 시그널에 대한 기본행동을 후자는 시그널을 무시하기 위해서 사용한다.
+
+sa_mask
+: sa_handler에 등록된 시그널 핸들러 함수가 실행되는 동안 블럭되어야 하는 시그널의 마스크를 제공한다. SA_NOMASK가 적용되어 있지 않다면
+
+sa_flags
+: 시그널 처리 프로세스의 행위를 수정하는 일련의 플래그들을 명시한다. 다음중 하나 이상의 것들에 의해서 만들어 진다.
+
+SA_NOCLDSTOP
+: 만약 signum이 SIGCHLD라면, 자식 프로세스가 SIGSTOP, SIGTSTP, SIGTTIN, SIGTTOU등을 받아서 중단되었을 때 이를 통지 받을 수 없게 된다.
+
+SA_ONESHOT, SA_RESETHAND
+: 일단 시그널 처리기가 호출되면, 기본 상태에 대한 시그널 액션을 재 저장한다. 이는 signal(2)호출에 대한 기본 행위이다.
+
+SA_RESTART
+: 일부 시스템 호출들이 시그널을 통해 재시작할 수 있도록 함으로서 BSD 시그널과 호환되도록 한다.
+
+SA_NOMASK, SA_NODEFER
+: 시그널이 자체 시그널 처리기로부터 수신 받지 않도록 한다.
+
+SA_SIGINFO
+: 시그널 처리기가 하나가 아닌 3개의 인자를 취할경우 sa_handler대신 sigaction의 siginfo_t를 이용할 수 있다. siginto_t는 다음과 같이 정의된 구조체이다.
+
+======== kill 함수를 이용하여 시그널 전송 ========
+#include <sys/types.h> 
+#include <signal.h>
+
+int kill(pid_t pid, int sig) ;
+
+======== raise 함수를 이용하여 시그널 전송 ========
+//자기자신에게 시그널을 전송할때 사용
+#include <sys/types.h> 
+#include <signal.h>
+
+int raise(int sig) ;
+
+======== killpg 함수를 이용하여 시그널 전송 ========
+//프로세스 그룹의 모든 멤버에게 시그널을 전송할때 사용
+#include <sys/types.h> 
+#include <signal.h>
+
+int killpg(pid_t pgrp, int sig) ;
+
+======== sigignore 함수를 이용하여 시그널 무시 ========
+#include <signal.h>
+
+int sigignore(int sig);
+//sig - 무시할 시그널
+
+sigignore 함수는 인자로 지정한 시그널의 처리 방법을 SIG_IGN으로 설정합니다.
+
+======== sigsend 함수를 이용하여 시그널 전송 ========
+
+#include <signal.h>
+
+int sigsend(idtype_t idtype, id_t id, int sig);
+
+//idtype - id에 지정한 값의 종류
+//id - 시그널을 받을 프로세스나 프로세스 그룹
+//sig - 보내려는 시그널
+
+sigsend 함수는 sig로 지정한 시그널을 id에 지정한 프로세스나 프로세스 그룹에 보냅니다. idtype은 id에 지정한 값의 의미를 알려줍니다. idtype에는 아래에 나타낸 값을 사용할 수 있습니다. 
+sigsend 함수가 kill 함수와 다른 점은 특정 프로세스 뿐만 아니라 프로세스 그룹등 시그널을 받을 대상을 다양하게 지정할 수 있다는 것입니다.
+
